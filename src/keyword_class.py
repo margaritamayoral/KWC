@@ -99,8 +99,8 @@ nlp.add_pipe(language_detector)
 df = pd.read_json('../../keyword_categories/keyword_categories_train.jsonl', lines=True)
 df_test = pd.read_json('../../keyword_categories/keyword_categories_test.jsonl', lines=True)
 
-###### Data exploration ##################
-#looking the data
+###### Data training exploration ##################
+#looking the training data
 print(df.head(10))
 #looking for missings, kind of data and shape:
 print(df.info())
@@ -112,7 +112,7 @@ print(df.head(10))
 print(df.info())
 
 keywords = df['keyword']
-print("detecting languages 1")
+print("detecting languages in training data")
 languages_langdetect = []
 for line in keywords:
     try:
@@ -127,22 +127,15 @@ for line in keywords:
         languages_langdetect.append(result)
 df['languages_langdetect'] = languages_langdetect
 print(df.head(10))
+## dropping the rows which contains languages that are not english  ###
 df.drop(df[df['languages_langdetect'] != 'en'].index, inplace = True)
 print(df.head(10))
 print(df.info())
-counter = Counter(df['categories'].tolist())
-print(counter)
-keyword_list = df['keyword'].tolist()
-categories_list = df['categories'].tolist()
-categories_list = np.array(categories_list)
-##print(categories_list)
 #
-count_vect = CountVectorizer()
-x_train_counts = count_vect.fit_transform(keyword_list)
+## saving in csv ##
+df.to_csv('../data/keyword_categories_train_clean.csv')
 #
-tfidf_transformer = TfidfTransformer()
-x_train_tfidf = tfidf_transformer.fit_transform(x_train_counts)
-
+#########  Data test exploration ###########
 print(df_test.head(10))
 print(df_test.info())
 df_test = df_test.explode('categories')
@@ -165,14 +158,42 @@ for line in keywords_test:
         languages_langdetect_test.append(result)
 df_test['languages_langdetect'] = languages_langdetect_test
 print(df_test.head(10))
+## dropping the rows which contains languages that are not english  ###
 df_test.drop(df_test[df_test['languages_langdetect'] != 'en'].index, inplace = True)
 print(df_test.head(10))
 print(df_test.info())
+## saving in csv ##
+df.to_csv('../data/keyword_categories_test_clean.csv')
+#
+#
+#
+## reading the new csvs ##
+df = pd.read_csv('../data/keyword_categories_train_clean.csv')
+print(df.head(10))
+df_test = pd.read_csv('../data/keyword_categories_test_clean.csv')
+print(df_test.head(10))
+
+counter = Counter(df['categories'].tolist())
+print(counter)
+#
+keyword_list = df['keyword'].tolist()
+categories_list = df['categories'].tolist()
+print(categories_list)
+categories_list = np.array(categories_list)
+
+count_vect = CountVectorizer()
+x_train_counts = count_vect.fit_transform(keyword_list)
+tfidf_transformer = TfidfTransformer()
+x_train_tfidf = tfidf_transformer.fit_transform(x_train_counts)
+
+## test data ##
 counter = Counter(df_test['categories'].tolist())
 print(counter)
 keyword_list_test = df_test['keyword'].tolist()
 categories_list_test = df_test['categories'].tolist()
+print(categories_list_test)
 categories_list_test = np.array(categories_list_test)
+
 x_test_counts = count_vect.fit_transform(keyword_list_test)
 x_test_tfidf = tfidf_transformer.fit_transform(x_test_counts)
 
@@ -188,15 +209,19 @@ test_y = categories_list_test
 clf = MultinomialNB().fit(train_x, train_y)
 print(clf)
 #
-text_clf = Pipeline([
-('vect', CountVectorizer(stop_words='english', encoding='utf-8')),
-('tfidf', TfidfTransformer()),
-('clf', MultinomialNB()),
-])
-#
-text_clf = text_clf.fit(train_x, train_y)
-y_score = text_clf.predict(test_x)
+y_score = clf.predict(test_x)
 print(y_score)
+print("the NB y score is:", y_score)
+#
+#text_clf = Pipeline([
+#('vect', CountVectorizer(stop_words='english')),
+#('tfidf', TfidfTransformer()),
+#('clf', MultinomialNB()),
+#])
+##
+#text_clf = text_clf.fit(train_x, train_y)
+
+
 #
 n_right = 0
 for i in range(len(y_score)):
@@ -210,26 +235,26 @@ print("Accuracy: %.2f%%" % ((n_right/float(len(test_y)) * 100)))
 #
 ######################################
 ##### Support Vector Machines (SVM) ###
-clf_svm_1 = SVC(kernel='linear').fit(train_x, train_y)
-y_score_svm_1 = clf_svm_1.predict(test_x)
+#clf_svm_1 = SVC(kernel='linear').fit(train_x, train_y)
+#y_score_svm_1 = clf_svm_1.predict(test_x)
+##
+#n_right_svm_1 = 0
+#for i in range(len(y_score_svm_1)):
+#    if y_score_svm_1[i] == test_y[i]:
+#        n_right_svm_1 += 1
+##
+#print("Accuracy: %.2f%%" % ((n_right_svm_1/float(len(test_y)) * 100)))
+##
+#clf_svm_2 = SGDClassifier(loss='hinge', penalty='l2',alpha=1e-3, random_state=42).fit(train_x, train_y)
+#y_score_svm_2 = clf_svm_2.predict(test_x)
+##
+#n_right_svm_2 = 0
+#for i in range(len(y_score_svm_2)):
+#    if y_score_svm_2[i] == test_y[i]:
+#        n_right_svm_2 += 1
+##
+#print("Accuracy: %.2f%%" % ((n_right_svm_2/float(len(test_y)) * 100)))
 #
-n_right_svm_1 = 0
-for i in range(len(y_score_svm_1)):
-    if y_score_svm_1[i] == test_y[i]:
-        n_right_svm_1 += 1
-#
-print("Accuracy: %.2f%%" % ((n_right_svm_1/float(len(test_y)) * 100)))
-#
-clf_svm_2 = SGDClassifier(loss='hinge', penalty='l2',alpha=1e-3, random_state=42).fit(train_x, train_y)
-y_score_svm_2 = clf_svm_2.predict(test_x)
-#
-n_right_svm_2 = 0
-for i in range(len(y_score_svm_2)):
-    if y_score_svm_2[i] == test_y[i]:
-        n_right_svm_2 += 1
-#
-print("Accuracy: %.2f%%" % ((n_right_svm_2/float(len(test_y)) * 100)))
-
 ### Deep learning model  ###
 
 #mapped_list, word_list = filter_to_top_x(description_list, 2500, 10)
