@@ -96,74 +96,74 @@ nlp.add_pipe(language_detector)
 
 ##### Loading the data ####
 
-#df = pd.read_json('../../keyword_categories/keyword_categories_train.jsonl', lines=True)
-#df_test = pd.read_json('../../keyword_categories/keyword_categories_test.jsonl', lines=True)
+df = pd.read_json('../../keyword_categories/keyword_categories_train.jsonl', lines=True)
+df_test = pd.read_json('../../keyword_categories/keyword_categories_test.jsonl', lines=True)
 #
 ####### Data training exploration ##################
 ##looking the training data
-#print(df.head(10))
+print(df.head(10))
 ##looking for missings, kind of data and shape:
-#print(df.info())
+print(df.info())
 ####### Data Cleaning and Normalization ####
-#print(df['categories'].head(10))
-#df = df.explode('categories')
-#print(df['categories'].head(10))
-#print(df.head(10))
-#print(df.info())
+print(df['categories'].head(10))
+df = df.explode('categories')
+print(df['categories'].head(10))
+print(df.head(10))
+print(df.info())
 #
-#keywords = df['keyword']
-#print("detecting languages in training data")
-#languages_langdetect = []
-#for line in keywords:
-#    try:
-#        result = langdetect.detect_langs(line)
-#        #print(result)
-#        result = str(result[0])[:2]
-#        #print(result)
-#    except:
-#        result = 'unknown'
-#
-#    finally:
-#        languages_langdetect.append(result)
-#df['languages_langdetect'] = languages_langdetect
-#print(df.head(10))
+keywords = df['keyword']
+print("detecting languages in training data")
+languages_langdetect = []
+for line in keywords:
+    try:
+        result = langdetect.detect_langs(line)
+        #print(result)
+        result = str(result[0])[:2]
+        #print(result)
+    except:
+        result = 'unknown'
+
+    finally:
+        languages_langdetect.append(result)
+df['languages_langdetect'] = languages_langdetect
+print(df.head(10))
 ### dropping the rows which contains languages that are not english  ###
-#df.drop(df[df['languages_langdetect'] != 'en'].index, inplace = True)
-#print(df.head(10))
-#print(df.info())
+df.drop(df[df['languages_langdetect'] != 'en'].index, inplace = True)
+print(df.head(10))
+print(df.info())
 ##
 ### saving in csv ##
-#df.to_csv('../data/keyword_categories_train_clean.csv')
+df.to_csv('../data/keyword_categories_train_clean.csv')
 ##
 ##########  Data test exploration ###########
-#print(df_test.head(10))
-#print(df_test.info())
-#df_test = df_test.explode('categories')
-#print(df_test['categories'].head(10))
-#print(df_test.head())
-#print(df_test.info())
-#keywords_test = df_test['keyword']
-#print("detecting languages 2")
-#languages_langdetect_test = []
-#for line in keywords_test:
-#    try:
-#        result = langdetect.detect_langs(line)
-#        #print(result)
-#        result = str(result[0])[:2]
-#        #print(result)
-#    except:
-#        result = 'unknown'
-#
-#    finally:
-#        languages_langdetect_test.append(result)
-#df_test['languages_langdetect'] = languages_langdetect_test
-#print(df_test.head(10))
+print(df_test.head(10))
+print(df_test.info())
+df_test = df_test.explode('categories')
+print(df_test['categories'].head(10))
+print(df_test.head())
+print(df_test.info())
+keywords_test = df_test['keyword']
+print("detecting languages 2")
+languages_langdetect_test = []
+for line in keywords_test:
+    try:
+        result = langdetect.detect_langs(line)
+        #print(result)
+        result = str(result[0])[:2]
+        #print(result)
+    except:
+        result = 'unknown'
+
+    finally:
+        languages_langdetect_test.append(result)
+df_test['languages_langdetect'] = languages_langdetect_test
+print(df_test.head(10))
 ### dropping the rows which contains languages that are not english  ###
-#df_test.drop(df_test[df_test['languages_langdetect'] != 'en'].index, inplace = True)
-#print(df_test.head(10))
-#print(df_test.info())
+df_test.drop(df_test[df_test['languages_langdetect'] != 'en'].index, inplace = True)
+print(df_test.head(10))
+print(df_test.info())
 ### saving in csv ##
-#df.to_csv('../data/keyword_categories_test_clean.csv')
+df.to_csv('../data/keyword_categories_test_clean.csv')
 #
 #
 #
