@@ -42,6 +42,7 @@ from googletrans import Translator
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import SGDClassifier
 from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
 ###############################
 #### Grid search for parameter tunning ###
 #from sklearn.model_selection import GridSearchCV
@@ -49,10 +50,13 @@ from sklearn.svm import SVC
 
 ################################
 ### Deep Learning model  ###
+from keras.preprocessing.text import Tokenizer
 from keras.models import Sequential
+from keras import layers
 from keras.layers import Dense, Conv1D, Flatten
 from keras.layers.embeddings import Embedding
 from keras.preprocessing import sequence
+from keras.preprocessing.sequence import pad_sequences
 from keras.utils import to_categorical
 import pandas as pd
 from collections import Counter
@@ -101,47 +105,47 @@ df_test = pd.read_json('../../keyword_categories/keyword_categories_test.jsonl',
 #
 ####### Data training exploration ##################
 ##looking the training data
-print(df.head(10))
+#print(df.head(10))
 ##looking for missings, kind of data and shape:
-print(df.info())
-####### Data Cleaning and Normalization ####
-print(df['categories'].head(10))
+#print(df.info())
+######## Data Cleaning and Normalization ####
+#print(df['categories'].head(10))
 df = df.explode('categories')
-print(df['categories'].head(10))
-print(df.head(10))
-print(df.info())
-#
+#print(df['categories'].head(10))
+#print(df.head(10))
+#print(df.info())
+##
 keywords = df['keyword']
 print("detecting languages in training data")
 languages_langdetect = []
 for line in keywords:
     try:
         result = langdetect.detect_langs(line)
-        #print(result)
+#        #print(result)
         result = str(result[0])[:2]
-        #print(result)
+#        #print(result)
     except:
         result = 'unknown'
-
+#
     finally:
         languages_langdetect.append(result)
 df['languages_langdetect'] = languages_langdetect
-print(df.head(10))
-### dropping the rows which contains languages that are not english  ###
+#print(df.head(10))
+#### dropping the rows which contains languages that are not english  ###
 df.drop(df[df['languages_langdetect'] != 'en'].index, inplace = True)
-print(df.head(10))
-print(df.info())
-##
-### saving in csv ##
+#print(df.head(10))
+#print(df.info())
+###
+#### saving in csv ##
 df.to_csv('../data/keyword_categories_train_clean.csv')
-##
-##########  Data test exploration ###########
-print(df_test.head(10))
-print(df_test.info())
+###
+###########  Data test exploration ###########
+#print(df_test.head(10))
+#print(df_test.info())
 df_test = df_test.explode('categories')
-print(df_test['categories'].head(10))
-print(df_test.head())
-print(df_test.info())
+#print(df_test['categories'].head(10))
+#print(df_test.head())
+#print(df_test.info())
 keywords_test = df_test['keyword']
 print("detecting languages 2")
 languages_langdetect_test = []
@@ -157,50 +161,90 @@ for line in keywords_test:
     finally:
         languages_langdetect_test.append(result)
 df_test['languages_langdetect'] = languages_langdetect_test
-print(df_test.head(10))
-### dropping the rows which contains languages that are not english  ###
+#print(df_test.head(10))
+#### dropping the rows which contains languages that are not english  ###
 df_test.drop(df_test[df_test['languages_langdetect'] != 'en'].index, inplace = True)
-print(df_test.head(10))
-print(df_test.info())
-### saving in csv ##
+#print(df_test.head(10))
+#print(df_test.info())
+#### saving in csv ##
 df.to_csv('../data/keyword_categories_test_clean.csv')
 #
 #
 #
 ## reading the new csvs ##
 df = pd.read_csv('../data/keyword_categories_train_clean.csv')
-print(df.head(10))
+#print(df.head(10))
+#print(df.info())
+#print(df['keyword'].head(20))
+#print(df['categories'].head(20))
 df_test = pd.read_csv('../data/keyword_categories_test_clean.csv')
-print(df_test.head(10))
+#print(df_test.head(10))
+
+
+#### Counting the different categories and taking only the 10 top (most common)#####
 
 counter = Counter(df['categories'].tolist())
-print(counter)
+#print(counter)
 #
 top_10_categories = {i[0]: idx for idx, i in enumerate(counter.most_common(10))}
+#print(top_10_categories)
 df = df[df['categories'].map(lambda x: x in top_10_categories)]
-print(df.head())
+#print(df.head(5))
+#print(df['categories'].head(5))
+#print(df['keyword'].head(5))
+#print(df.info())
 keyword_list = df['keyword'].tolist()
+#print(keyword_list)
 categories_list = [top_10_categories[i] for i in df['categories'].tolist()]
-print(categories_list)
+#print(categories_list)
 categories_list = np.array(categories_list)
-print(categories_list)
+#print(categories_list)
+#### Test data  #####
+df_test = df_test[df_test['categories'].map(lambda x: x in top_10_categories)]
+keyword_list_test = df_test['keyword'].tolist()
+categories_list_test = [top_10_categories[i] for i in df_test['categories'].tolist()]
+categories_list_test = np.array(categories_list_test)
+#####################################################
+##### vectorizing the data  Method A ####
+### Training data  ###
+#print(df.head())
+count_vect = CountVectorizer(stop_words='english')
+count_vect = count_vect.fit(keyword_list)
+tfidf_transformer = TfidfTransformer()
+x_train = count_vect.transform(keyword_list)
+print("x_train", x_train)
+y_train = categories_list
+### Test data  ##
+x_test = count_vect.transform(keyword_list_test)
+print("x_test", x_test)
+y_test = categories_list_test
+
+####### Logistic Regression model #####
+print("Training Logistic Regression model")
+LRmodel = LogisticRegression()
+LRmodel.fit(x_train, y_train)
+print("Testing Logistic Regression model")
+score = LRmodel.score(x_test, y_test)
+print("LR Accuracy: ", score)
+###### It gave an accuracy of about  46.15%###
+
+########################################################
+#### Vectorizing the data Method B  ################
 
 count_vect = CountVectorizer(stop_words='english')
 x_train_counts = count_vect.fit_transform(keyword_list)
+#print("printing the vector of counts", x_train_counts)
 tfidf_transformer = TfidfTransformer()
 x_train_tfidf = tfidf_transformer.fit_transform(x_train_counts)
 
 ## test data ##
-counter_test = Counter(df_test['categories'].tolist())
-print(counter_test)
-#top_10_categories_test = {i[0]: idx for idx, i in enumerate(counter_test.most_common(10))}
 df_test = df_test[df_test['categories'].map(lambda x: x in top_10_categories)]
-print(df_test.head())
+#print(df_test.head())
 keyword_list_test = df_test['keyword'].tolist()
 categories_list_test = [top_10_categories[i] for i in df_test['categories'].tolist()]
-print(categories_list_test)
+#print(categories_list_test)
 categories_list_test = np.array(categories_list_test)
-print(categories_list_test)
+#print(categories_list_test)
 x_test_counts = count_vect.fit_transform(keyword_list_test)
 x_test_tfidf = tfidf_transformer.fit_transform(x_test_counts)
 
@@ -209,44 +253,36 @@ train_x = x_train_tfidf
 test_x = x_test_tfidf
 train_y = categories_list
 test_y = categories_list_test
-#train_x, test_x, train_y, test_y = train_test_split(x_train_tfidf, categories_list, test_size=0.3)
+
 #
 ##########################################
 ##### Naive Bayes Classifier  ####
+print("Training Naive Bayes Classifier")
 clf = MultinomialNB().fit(train_x, train_y)
-print(clf)
+#print(clf)
 #
+print("Testing Naive Bayes Classifier")
 y_score = clf.predict(test_x)
-print(test_x, y_score)
-print("the NB y score is:", y_score)
-#
-#text_clf = Pipeline([
-#('vect', CountVectorizer(stop_words='english')),
-#('tfidf', TfidfTransformer()),
-#('clf', MultinomialNB()),
-#])
-##
-
-
-
+#print(test_x, y_score)
 #
 n_right = 0
 for i in range(len(y_score)):
     if y_score[i] == test_y[i]:
         n_right += 1
 
-print("Accuracy: %.2f%%" % ((n_right/float(len(test_y)) * 100)))
+print("The NB Accuracy is: %.2f%%" % ((n_right/float(len(test_y)) * 100)))
 #
 ##
-###### It gave an accuracy of about  36.43%###
+###### It gave an accuracy of about  46.26%###
 #
 ######################################
 ##### Support Vector Machines (SVM) ###
 ##
 print("computing SGD Classifier")
 clf_svm_2 = SGDClassifier(loss='hinge', penalty='l2',alpha=1e-3, random_state=42).fit(train_x, train_y)
+print("testing SGC Classifier")
 y_score_svm_2 = clf_svm_2.predict(test_x)
-print(y_score_svm_2)
+#print(y_score_svm_2)
 ##
 n_right_svm_2 = 0
 for i in range(len(y_score_svm_2)):
@@ -255,40 +291,38 @@ for i in range(len(y_score_svm_2)):
 ##
 print("SGD Classifier Accuracy: %.2f%%" % ((n_right_svm_2/float(len(test_y)) * 100)))
 
-###### It gave an accuracy of about  38.71%###
+###### It gave an accuracy of about 47.42%###
 #
 ### Deep learning model  ###
 print("Calculating Deep Learning model")
-mapped_list, word_list = filter_to_top_x(keyword_list, 2500, 10)
 
-categories_list_o = [top_10_categories[i] for i in df['categories'].tolist()]
-print(categories_list_o)
-categories_list = to_categorical(categories_list_o)
-#
-max_keyword_length = 150
-#
-mapped_list = sequence.pad_sequences(mapped_list, maxlen=max_keyword_length)
-#train_x, test_x, train_y, test_y = train_test_split(mapped_list, categories_list, test_size=0.3)
-#
-max_keyword_length = 150
-embedding_vector_length = 64
-print("training DL model ...")
-model = Sequential()
-#
-model.add(Embedding(2500, embedding_vector_length, input_length=max_keyword_length))
-model.add(Conv1D(50,5))
-model.add(Flatten())
-model.add(Dense(100, activation='relu'))
-model.add(Dense(max(categories_list_o) + 1, activation='softmax'))
-model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-model.fit(train_x, train_y, epochs=3, batch_size=64)
-#
-y_score = model.predict(test_x)
-y_score = [[1 if i == max(sc) else 0 for i in sc] for sc in y_score]
-n_right = 0
-for i in range(len(y_score)):
-    if all(y_score[i][j] == test_y[i][j] for j in range(len(y_score[i]))):
-        n_right += 1
-print("Accuracy DL: %.2f%%" % ((n_right/float(len(test_y)) * 100)))
+tokenizer = Tokenizer(num_words=5000)
+tokenizer.fit_on_texts(keyword_list)
+Xcnn_train = tokenizer.texts_to_sequences(keyword_list)
+Xcnn_test = tokenizer.texts_to_sequences(keyword_list_test)
+vocab_size = len(tokenizer.word_index) + 1
+print(keyword_list[1])
+print(Xcnn_train[1])
+maxlen = 100
+Xcnn_train = pad_sequences(Xcnn_train, padding='post', maxlen=maxlen)
+Xcnn_test = pad_sequences(Xcnn_test, padding='post', maxlen=maxlen)
+print(Xcnn_train[0, :])
+##### adding layers  ####
+embedding_dim = 200
+textcnnmodel = Sequential()
+textcnnmodel.add(layers.Embedding(vocab_size, embedding_dim, input_length=maxlen))
+textcnnmodel.add(layers.Conv1D(128, 5, activation='relu'))
+textcnnmodel.add(layers.GlobalMaxPooling1D())
+textcnnmodel.add(layers.Dense(10,activation='relu'))
+textcnnmodel.add(layers.Dense(1,activation='sigmoid'))
+textcnnmodel.compile(optimizer='adam',loss='binary_crossentropy', metrics=['accuracy'])
+textcnnmodel.summary()
+###### Fitting the model  ###
+textcnnmodel.fit(Xcnn_train, y_train, epochs=4, validation_data=(Xcnn_test, y_test), batch_size=10)
+loss, accuracy = textcnnmodel.evaluate(Xcnn_train, y_train, verbose=False)
+print("training Accuracy: {:.4f}".format(accuracy))
+loss, accuracy = textcnnmodel.evaluate(Xcnn_test, y_test, verbose=False)
+print("Testing Accuracy: {:.4f}".format(accuracy))
+
 
 
