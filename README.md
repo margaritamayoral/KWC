@@ -48,3 +48,21 @@ Among these classifiers SVM was the one that gave the best accuracy: 47.42%
 For the CNN neural network, it was difficult to converge after 5 epochs. Trying with 10 epochs would be the next step, however as the rate of validation is very low, a better accuracy than the accuracy obtained with the conventional ML methods is very unlikely to reach.
 
 
+
+
+## Observations for the next steps
+
+There are some criteria that I used which, after having the accuracy that I am having, may be a good option to change that since the beginning. 
+
+
+In the process I am exploiting the categories in such a way that each different category is going to be related to each keyword, that means that the keywords could belong to different categories. That could be giving me noise in my data set. Then, it may be a good option to try some lemmatization methodology in order to have the words in the corpus (the keywords) identified with their roots. In this way we could have more instances of a root linked with the categories.
+
+
+The other technique that can be applied is the combination of words in the keywords. Then another step that could be added is the use of bigrams or ngrams (maybe starting with bigrams) in that way the model can consider the words combined and this can help to improve the accuracy.
+
+
+Also, it can be useful to create a dictionary of keyword terms (bigrams or ngrams) that can be feeded each time that a new term shows in the keywords. This dictionary is going to give us a direct relation among the keywords and the different categories that are being managed.
+
+
+Using those bigrams or ngrams I would try another model that put together the strengths of SVM and Naive Bayes. That methodology has shown to give good results when we don't have too much information in the corpus that we are classifying.
+
