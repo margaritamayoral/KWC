@@ -66,3 +66,6 @@ Also, it can be useful to create a dictionary of keyword terms (bigrams or ngram
 
 Using those bigrams or ngrams I would try another model that put together the strengths of SVM and Naive Bayes. That methodology has shown to give good results when we don't have too much information in the corpus that we are classifying.
 
+### BERT
+
+Another step that would be good totry is to apply "Bidirectional Encoder Representations from Transformers" (BERT), since it has shown a good accuracy while classifying sentences.
